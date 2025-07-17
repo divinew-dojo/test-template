@@ -6,28 +6,20 @@ metadata:
   title: Simple Repository Creator
   description: Creates a new GitHub repository and registers it as a component.
 spec:
-  owner: user:guest # Or your team name
+  owner: builds-processed-squad # Or your team name
   type: service
 
   # --- This is the user-facing form ---
   # We only ask for the component name, description, and owner.
   parameters:
     - title: Component Details
-      required: [component_id, owner]
+      required:
+        - name
       properties:
-        component_id:
+        name:
           title: Component Name
           type: string
           description: A unique name for the new component (e.g., my-new-service).
-        description:
-          title: Description
-          type: string
-          description: A short description of the component.
-        owner:
-          title: Owner
-          type: string
-          description: The team that will own this component.
-          ui:field: OwnerPicker
 
   # --- These are the actions the template will perform ---
   steps:
