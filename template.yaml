@@ -1,0 +1,68 @@
+# ./template.yaml
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: simple-repo-template
+  title: Simple Repository Creator
+  description: Creates a new GitHub repository and registers it as a component.
+spec:
+  owner: user:guest # Or your team name
+  type: service
+
+  # --- This is the user-facing form ---
+  # We only ask for the component name, description, and owner.
+  parameters:
+    - title: Component Details
+      required: [component_id, owner]
+      properties:
+        component_id:
+          title: Component Name
+          type: string
+          description: A unique name for the new component (e.g., my-new-service).
+        description:
+          title: Description
+          type: string
+          description: A short description of the component.
+        owner:
+          title: Owner
+          type: string
+          description: The team that will own this component.
+          ui:field: OwnerPicker
+
+  # --- These are the actions the template will perform ---
+  steps:
+    # 1. Copy the skeleton files into a temporary directory.
+    - id: fetch-skeleton
+      name: Fetch Skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton # Points to the 'skeleton' directory in this repo
+        values: # These values will replace placeholders in the skeleton files
+          component_id: ${{ parameters.component_id }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+
+    # 2. Create a new repository on GitHub with the fetched files.
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        repoUrl: 'github.com?owner=dojo-engineering-dev&repo=${{ parameters.component_id }}'
+        description: ${{ parameters.description }}
+        defaultBranch: main
+
+    # 3. Register the new component in the Backstage catalog.
+    - id: register
+      name: Register Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  # --- This defines the output shown to the user after completion ---
+  output:
+    links:
+      - title: View Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open in Catalog
+        entityRef: ${{ steps.register.output.entityRef }}
